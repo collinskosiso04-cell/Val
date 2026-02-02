@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Important Question 👀</title>
+  <style>
+    :root { --btnW: 140px; --btnH: 52px; }
+    body{
+      height:100vh; margin:0; overflow:hidden;
+      background: radial-gradient(circle at top, #ffd1dc, #ff7aa2, #ff4d6d);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-family: Arial, system-ui, -apple-system, sans-serif;
+      text-align:center; color:#1a1a1a;
+      padding: 16px;
+    }
+    .card{
+      width:min(720px, 92vw);
+      background: rgba(255,255,255,0.25);
+      border: 1px solid rgba(255,255,255,0.35);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.18);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 22px 18px 28px;
+    }
+    h1{ margin: 6px 0 10px; font-size: clamp(28px, 5vw, 46px); }
+    .sub{ font-size: clamp(14px, 2.4vw, 18px); opacity: 0.95; margin: 0 0 14px; }
+    .countdown{
+      display:inline-block;
+      padding:10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.35);
+      border: 1px solid rgba(255,255,255,0.45);
+      font-weight: 700;
+      margin: 10px 0 16px;
+      font-size: clamp(13px, 2.4vw, 16px);
+    }
+    .controls{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+      margin: 8px 0 18px;
+    }
+    .chip{
+      font-size: 14px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: rgba(255,255,255,0.55);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.14);
+    }
+    .chip:active{ transform: scale(0.98); }
+
+    .btnRow{
+      display:flex; gap: 14px; justify-content:center; align-items:center;
+      margin-top: 6px;
+      flex-wrap: wrap;
+      position: relative;
+      min-height: 82px;
+    }
+    button.big{
+      width: var(--btnW);
+      height: var(--btnH);
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 12px 26px rgba(0,0,0,0.22);
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #yes{
+      background: #ffffff;
+      color: #ff2d55;
+      font-weight: 800;
+      position: static;
+    }
+    #no{
+      background: #111;
+      color: white;
+      position: fixed; /* we’ll move it anywhere */
+      left: 50%;
+      top: 70%;
+      transform: translate(-50%, -50%);
+    }
+
+    .msg{
+      margin-top: 14px;
+      font-size: clamp(14px, 2.4vw, 18px);
+      min-height: 26px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.75);
+    }
+    .footer{
+      margin-top: 10px;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    canvas#confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Success screen */
+    .success{
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      height:100vh; width:100vw;
+      text-align:center;
+      color:#1a1a1a;
+    }
+    .heart{
+      font-size: clamp(50px, 10vw, 110px);
+      animation: pop 0.9s ease-in-out infinite alternate;
+    }
+    @keyframes pop{
+      from{ transform: scale(0.95); }
+      to{ transform: scale(1.05); }
+    }
+    .success h2{
+      font-size: clamp(30px, 6vw, 56px);
+      margin: 8px 0;
+    }
+    .success p{
+      font-size: clamp(16px, 3vw, 22px);
+      margin: 4px 0;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti"></canvas>
+
+<div class="card" id="mainCard">
+  <h1>Will you be my Valentine? 💘</h1>
+  <p class="sub">Be honest… but also choose wisely 😌</p>
+
+  <div class="countdown" id="countdown">Loading countdown…</div>
+
+  <div class="controls">
+    <button class="chip" id="musicBtn">▶️ Play music</button>
+    <button class="chip" id="resetBtn">🔁 Reset buttons</button>
+  </div>
+
+  <div class="btnRow">
+    <button class="big" id="yes">Yes 😍</button>
+    <button class="big" id="no">No 🙃</button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+  <div class="footer">Tip: If “No” is hard to click… that’s the point 😈</div>
+</div>
+
+<!-- Music (royalty-free-ish file is NOT included; you must use a URL you own or a local mp3) -->
+<audio id="bgm" loop>
+  <!-- Replace this with YOUR audio file (recommended: upload an mp3 to your site and use that path) -->
+  <!-- Example: <source src="music.mp3" type="audio/mpeg"> -->
+</audio>
+
+<script>
+  // -------------------------------
+  // Countdown to Valentine's Day 2026
+  // -------------------------------
+  const countdownEl = document.getElementById("countdown");
+  function updateCountdown(){
+    const target = new Date("2026-02-14T00:00:00"); // local time
+    const now = new Date();
+    const diff = target - now;
+
+    if(diff <= 0){
+      countdownEl.textContent = "It’s Valentine’s Day 😭❤️";
+      return;
+    }
+    const totalSeconds = Math.floor(diff / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+
+    countdownEl.textContent = `Countdown: ${days}d ${hours}h ${mins}m ${secs}s until Feb 14, 2026 💝`;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // -------------------------------
+  // “No” button that runs away (desktop + mobile)
+  // -------------------------------
+  const noBtn = document.getElementById("no");
+  const msgEl = document.getElementById("msg");
+  const resetBtn = document.getElementById("resetBtn");
+
+  const taunts = [
+    "Nahhh you almost had it 😭",
+    "Try again 😌",
+    "Be serious… 💀",
+    "Why are you like this 🤨",
+    "No is not available today 😈",
+    "Your finger slipped? 😭",
+    "This button is on vacation 🏝️",
+    "Oops—wrong choice 😌",
+    "Look at you chasing it 😂",
+    "Just press Yes already 😭❤️"
+  ];
+
+  function randomTaunt(){
+    msgEl.textContent = taunts[Math.floor(Math.random() * taunts.length)];
+  }
+
+  function moveNoButton(){
+    const padding = 12;
+    const bw = noBtn.offsetWidth || 140;
+    const bh = noBtn.offsetHeight || 52;
+
+    const maxX = window.innerWidth - bw - padding;
+    const maxY = window.innerHeight - bh - padding;
+
+    const x = Math.max(padding, Math.floor(Math.random() * maxX));
+    const y = Math.max(padding, Math.floor(Math.random() * maxY));
+
+    noBtn.style.left = x + "px";
+    noBtn.style.top  = y + "px";
+    noBtn.style.transform = "none";
+    randomTaunt();
+  }
+
+  // Desktop: runs away on hover
+  noBtn.addEventListener("mouseover", moveNoButton);
+
+  // Mobile: runs away when you try to touch it
+  noBtn.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    moveNoButton();
+  }, { passive: false });
+
+  // If they somehow click "No" anyway:
+  noBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    msgEl.textContent = "Nice try… but still no 😭";
+    moveNoButton();
+  });
+
+  // Reset
+  resetBtn.addEventListener("click", () => {
+    msgEl.textContent = "";
+    noBtn.style.left = "50%";
+    noBtn.style.top = "70%";
+    noBtn.style.transform = "translate(-50%, -50%)";
+  });
+
+  // Start with the "No" button moved a bit so it’s not on top of anything
+  setTimeout(moveNoButton, 450);
+
+  // -------------------------------
+  // Confetti (canvas)
+  // -------------------------------
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+  let W, H;
+  function resize(){
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  let confetti = [];
+  function makeConfettiBurst(){
+    confetti = [];
+    const count = 220;
+    for(let i=0;i<count;i++){
+      confetti.push({
+        x: Math.random() * W,
+        y: -20 - Math.random() * H * 0.2,
+        vx: (Math.random() - 0.5) * 6,
+        vy: 3 + Math.random() * 6,
+        size: 4 + Math.random() * 8,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.2,
+        life: 180 + Math.random() * 120
+      });
+    }
+  }
+
+  function drawConfetti(){
+    ctx.clearRect(0,0,W,H);
+    confetti.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      // No fixed colors requested, but confetti needs variety:
+      // We'll generate random bright colors per frame based on position
+      ctx.fillStyle = `hsl(${(p.x + p.y) % 360}, 90%, 60%)`;
+      ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.7);
+      ctx.restore();
+    });
+  }
+
+  function stepConfetti(){
+    confetti.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vr;
+      p.vy += 0.02; // gravity
+      p.life -= 1;
+    });
+    confetti = confetti.filter(p => p.life > 0 && p.y < H + 50);
+    drawConfetti();
+    if(confetti.length > 0) requestAnimationFrame(stepConfetti);
+  }
+
+  // -------------------------------
+  // Music (phones block autoplay, so button plays)
+  // -------------------------------
+  const musicBtn = document.getElementById("musicBtn");
+  const bgm = document.getElementById("bgm");
+  let musicOn = false;
+
+  // IMPORTANT:
+  // Add your own audio source!
+  // Example: bgm.src = "music.mp3";  (if music.mp3 is in same folder)
+  // If you don't add one, the button will just do nothing.
+
+  musicBtn.addEventListener("click", async () => {
+    try{
+      if(!bgm.src){
+        alert("Add a music file first: upload an MP3 and set bgm.src = 'music.mp3' in the code.");
+        return;
+      }
+      if(!musicOn){
+        await bgm.play();
+        musicOn = true;
+        musicBtn.textContent = "⏸ Pause music";
+      } else {
+        bgm.pause();
+        musicOn = false;
+        musicBtn.textContent = "▶️ Play music";
+      }
+    } catch(err){
+      alert("Music couldn't play. Try tapping again or check the audio file.");
+    }
+  });
+
+  // -------------------------------
+  // YES button = success screen + confetti
+  // -------------------------------
+  const yesBtn = document.getElementById("yes");
+  yesBtn.addEventListener("click", () => {
+    makeConfettiBurst();
+    stepConfetti();
+
+    document.body.innerHTML = `
+      <canvas id="confetti"></canvas>
+      <div class="success">
+        <div class="heart">💖</div>
+        <h2>YAYYYYY 😭❤️</h2>
+        <p>You’re officially my Valentine 💕</p>
+        <p>I love you 😌</p>
+      </div>
+    `;
+
+    // Re-hook confetti canvas after replacing body
+    const newCanvas = document.getElementById("confetti");
+    const newCtx = newCanvas.getContext("2d");
+    function setSize(){
+      newCanvas.width = window.innerWidth;
+      newCanvas.height = window.innerHeight;
+    }
+    setSize();
+    window.addEventListener("resize", setSize);
+
+    // Reuse the same confetti objects
+    function draw(){
+      newCtx.clearRect(0,0,newCanvas.width,newCanvas.height);
+      confetti.forEach(p => {
+        newCtx.save();
+        newCtx.translate(p.x, p.y);
+        newCtx.rotate(p.rot);
+        newCtx.fillStyle = `hsl(${(p.x + p.y) % 360}, 90%, 60%)`;
+        newCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.7);
+        newCtx.restore();
+      });
+    }
+    function animate(){
+      confetti.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        p.vy += 0.02;
+        p.life -= 1;
+      });
+      confetti = confetti.filter(p => p.life > 0 && p.y < newCanvas.height + 50);
+      draw();
+      if(confetti.length > 0) requestAnimationFrame(animate);
+    }
+    animate();
+  });
+
+  // OPTIONAL: If you add a file called music.mp3 in the same folder,
+  // uncomment this line:
+  // bgm.src = "music.mp3";
+</script>
+
+</body>
+</html>
