@@ -239,7 +239,7 @@
       <div class="fallback" id="fallback" style="display:none;">
         Your photos aren’t loading 😭<br><br>
         Make sure your files are named exactly:<br>
-        pic1.jpg … pic6.jpg<br>
+        pic1.jpeg … pic5.jpg<br>
         and uploaded in the same folder as index.html
       </div>
     </div>
@@ -282,30 +282,56 @@
     updateCountdown();
     setInterval(updateCountdown, 1000);
 
-    // -------------------------------
-    // Slideshow (6 pics)
-    // -------------------------------
-    let slideIndex = 0;
-    const slides = Array.from(document.querySelectorAll(".slideshow img"));
-    const fallback = document.getElementById("fallback");
+   // -------------------------------
+// Slideshow (AUTO-detect jpg/jpeg/png) for 5 pics
+// -------------------------------
+const fallback = document.getElementById("fallback");
+const slideshow = document.getElementById("slideshow");
 
-    // If images fail to load (bad filenames), show fallback
-    let loadedCount = 0;
-    slides.forEach(img => {
-      img.addEventListener("load", () => {
-        loadedCount++;
-      });
-      img.addEventListener("error", () => {
-        fallback.style.display = "flex";
-      });
-    });
+const exts = ["jpg", "jpeg", "png"];
+const maxPics = 5;
+let slides = [];
+let slideIndex = 0;
 
-    setInterval(() => {
-      if (!slides.length) return;
-      slides[slideIndex].classList.remove("active");
-      slideIndex = (slideIndex + 1) % slides.length;
-      slides[slideIndex].classList.add("active");
-    }, 2600);
+function tryLoad(i, extIndex = 0) {
+  if (extIndex >= exts.length) return Promise.reject();
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = `pic${i}.${exts[extIndex]}`;
+    img.onload = () => resolve(img.src);
+    img.onerror = () => reject();
+  }).catch(() => tryLoad(i, extIndex + 1));
+}
+
+async function buildSlides() {
+  for (let i = 1; i <= maxPics; i++) {
+    try {
+      const src = await tryLoad(i);
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = `pic${i}`;
+      if (slides.length === 0) img.classList.add("active");
+      slideshow.prepend(img);
+      slides.push(img);
+    } catch (e) {
+      // skip if pic doesn't exist in any extension
+    }
+  }
+
+  if (slides.length === 0) {
+    fallback.style.display = "flex";
+    return;
+  }
+
+  setInterval(() => {
+    slides[slideIndex].classList.remove("active");
+    slideIndex = (slideIndex + 1) % slides.length;
+    slides[slideIndex].classList.add("active");
+  }, 2600);
+}
+
+buildSlides();
 
     // -------------------------------
     // No button stays inside the CARD (always visible)
